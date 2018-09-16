@@ -10,11 +10,7 @@ import in.spiph.info.Post;
 import in.spiph.info.packets.base.APacket;
 import in.spiph.info.packets.base.TestPacket;
 import in.spiph.info.packets.client.PagePacket;
-import in.spiph.info.packets.tracker.IpPacket;
-import in.spiph.server.localclientcom.LocalClientCom;
-import in.spiph.server.servercom.ServerCom;
-import in.spiph.server.servercom.ServerComSender;
-import in.spiph.server.trackercom.TrackerCom;
+import io.netty.channel.ChannelPipeline;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,34 +23,29 @@ import java.util.Map;
  */
 public class Server {
 
-    public static String name = Math.random() + "S";
+    public static String name = "S" + Math.random() + "S";
     public static Page page = new Page(new ArrayList<Post>(), "ABCD");
-    private static LocalClientCom localClient;
-    private static ServerCom serverListener;
+    private static PacketServer packetServer;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("spiphi.server_port", "4196");
-        System.setProperty("spiphi.client_port", "4198");
-        System.setProperty("spiphi.tracker_port", "4197");
+        System.setProperty("spiphi.port", "4198");
         
         ipList.put(123456789L, "127.0.0.1");
         
         page.getPosts().add(new Post(LocalDateTime.now(), "Hi"));
         page.getPosts().add(new Post(LocalDateTime.now(), "Ho"));
         
-        localClient = new LocalClientCom();
-        serverListener = new ServerCom();
+        packetServer = new PacketServer();
         
-        new Thread(localClient).start();
-        new Thread(serverListener).start();
+        new Thread(packetServer).start();
     }
 
-    public static void handleClientPacket(PacketServerHandler client, APacket packet) {
+    public static void handleClientPacket(ChannelPipeline pipeline, APacket packet) {
         switch (packet.getType()) {
             case 0: // TestPacket
                 switch (packet.getData().toString()) {
                     case "Request":
-                        client.sendPacket(new TestPacket("Hello!"));
+                        pipeline.fireUserEventTriggered(new TestPacket("Hello!"));
                         break;
                     default:
                         System.out.println("Test Succeeds");
@@ -66,16 +57,16 @@ public class Server {
                 if (packet.getData() instanceof Page) {
                     page = (Page) packet.getData();
                 } else if (ipList.containsKey(id)) {
-                    ServerComSender pager = new ServerComSender();
-                    pager.sendPacket(packet);
+                    PacketServerClient server = new PacketServerClient(pipeline);
+                    server.handler.fireUserEventTriggered(packet);
                     try {
-                        pager.initialize(ipList.get(id));
+                        server.initialize(ipList.get(id));
                     } catch (IOException | InterruptedException ex) {
                         System.err.println("Server closed");
                         ex.printStackTrace();
                     }
                 } else {
-                    new TrackerCom().sendPacket(new IpPacket(Long.valueOf((String) packet.getData())));
+//                    tracker.sendPacket(new IpPacket(Long.valueOf((String) packet.getData())));
                 }
                 break;
             default: // ErrorPacket
@@ -83,12 +74,12 @@ public class Server {
         }
     }
 
-    public static void handleTrackerPacket(PacketServerHandler tracker, APacket packet) {
+    public static void handleTrackerPacket(ChannelPipeline pipeline, APacket packet) {
         switch (packet.getType()) {
             case 0: // TestPacket
                 switch (packet.getData().toString()) {
                     case "Request":
-                        tracker.sendPacket(new TestPacket("Hello!"));
+//                        tracker.sendPacket(new TestPacket("Hello!"));
                         break;
                     default:
                         System.out.println("Test Succeeds");
@@ -103,24 +94,20 @@ public class Server {
         }
     }
 
-    public static void handleServerPacket(PacketServerHandler server, APacket packet) {
+    public static void handleServerPacket(ChannelPipeline pipeline, APacket packet) {
         switch (packet.getType()) {
             case 0: // TestPacket
                 switch (packet.getData().toString()) {
                     case "Request":
-                        server.sendPacket(new TestPacket("Hello!"));
+                        pipeline.fireUserEventTriggered(new TestPacket("Hello!"));
                         break;
                     default:
                         System.out.println("Test Succeeds");
                 }
                 break;
             case 2: // PagePacket
-                if (packet.getData() instanceof Page) {
-                    localClient.packetHandler.sendPacket(packet);
-                } else if (packet.getData() instanceof String) {
-                    server.sendPacket(new PagePacket(page));
-                } else {
-                    localClient.packetHandler.sendPacket(packet); // Temporary
+                if (packet.getData() instanceof String) {
+                    pipeline.fireUserEventTriggered(new PagePacket(page));
                 }
                 break;
             default: // ErrorPacket
