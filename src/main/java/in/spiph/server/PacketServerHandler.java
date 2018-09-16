@@ -34,9 +34,6 @@ public class PacketServerHandler extends PacketHandler {
     @Override
     public void handlePacket(ChannelPipeline pipeline, APacket packet) {
         switch (packet.getFrom().charAt(0)) {
-            case 'T': //Tracker
-                Server.handleTrackerPacket(pipeline, packet);
-                break;
             case 'C': //Client
                 Server.handleClientPacket(pipeline, packet);
                 break;
@@ -44,7 +41,7 @@ public class PacketServerHandler extends PacketHandler {
                 Server.handleServerPacket(pipeline, packet);
                 break;
             default:
-                System.out.println("Packet received from unknown. Cannot handle.");
+                System.out.println("Packet received from unknown (" + packet.getFrom() + "). Cannot handle.");
         }
     }
     
