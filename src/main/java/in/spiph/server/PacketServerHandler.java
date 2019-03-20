@@ -9,6 +9,8 @@ import in.spiph.info.packets.handling.PacketHandler;
 import in.spiph.info.packets.base.APacket;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelPipeline;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -24,7 +26,7 @@ public class PacketServerHandler extends PacketHandler {
     @Override
     public boolean handleException(Throwable cause) {
         if (cause.getMessage().equals("An existing connection was forcibly closed by the remote host")) {
-            System.out.println("\n\tClient disconnected");
+            Logger.getLogger(Server.class.getName()).log(Level.INFO, "\n\tClient disconnected");
         } else {
             return false;
         }
@@ -41,7 +43,7 @@ public class PacketServerHandler extends PacketHandler {
                 Server.handleServerPacket(pipeline, packet);
                 break;
             default:
-                System.out.println("Packet received from unknown (" + packet.getFrom() + "). Cannot handle.");
+                Logger.getLogger(Server.class.getName()).log(Level.WARNING, "Packet received from unknown ({0}). Cannot handle.", packet.getFrom());
         }
     }
     

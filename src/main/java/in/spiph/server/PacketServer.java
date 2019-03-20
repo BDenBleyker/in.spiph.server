@@ -16,6 +16,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import java.security.cert.CertificateException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.SSLException;
 
 /**
@@ -30,7 +32,7 @@ public class PacketServer implements Runnable {
     @Override
     public void run() {
         try {
-            System.out.println("Starting PacketServer on port " + PORT);
+            Logger.getLogger(Server.class.getName()).log(Level.INFO, "Starting PacketServer on port ", PORT);
             
             //Setup SSL
             final SslContext sslCtx;
@@ -60,11 +62,11 @@ public class PacketServer implements Runnable {
             
         //
         } catch (SSLException ex) {
-            System.err.println("SSL failed to build\n" + ex.getLocalizedMessage());
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, "SSL failed to build\n" + ex.getLocalizedMessage(), ex);
         } catch (CertificateException ex) {
-            System.err.println("Invalid certificate\n" + ex.getLocalizedMessage());
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, "Invalid certificate\n" + ex.getLocalizedMessage(), ex);
         } catch (InterruptedException ex) {
-            System.err.println("ChannelFuture failed to bind or to close\n" + ex.getLocalizedMessage());
+            Logger.getLogger(Server.class.getName()).log(Level.INFO, "ChannelFuture failed to bind or to close\n" + ex.getLocalizedMessage(), ex);
         }
     }
 }

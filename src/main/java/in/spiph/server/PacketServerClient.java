@@ -18,6 +18,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -28,20 +30,20 @@ public class PacketServerClient {
     static final boolean SSL = System.getProperty("ssl") != null;
     static final int PORT = Integer.valueOf(System.getProperty("spiphi.port", "4198"));
     
-    private int portskew = 0; //Cannot use the same port because they are on the same machine
+    private int portSkew = 0; //Cannot use the same port because they are on the same machine
     public PacketHandler handler;
     
     public PacketServerClient(ChannelPipeline associatedClient) {
-         handler = new PacketServerClientHandler(Server.name, associatedClient);
+         handler = new PacketServerServerHandler(Server.name, associatedClient);
     }
     
-    public PacketServerClient(ChannelPipeline associatedClient, int port) { //Cannot use the same port because they are on the same machine
-         handler = new PacketServerClientHandler(Server.name, associatedClient);
-         this.portskew = port;
+    public PacketServerClient() { //Cannot use the same port because they are on the same machine
+         handler = new PacketServerTrackerHandler(Server.name);
+         this.portSkew = 1;
     }
 
     public void initialize(String ip) throws IOException, InterruptedException {
-        System.out.println("Starting PacketServerClient on port " + ((portskew > 0) ? portskew : PORT)); //Cannot use the same port because they are on the same machine
+        Logger.getLogger(Server.class.getName()).log(Level.INFO, "Starting PacketServerClient on port {0}", PORT + portSkew); //Cannot use the same port because they are on the same machine
 
         //Setup SSL
         final SslContext sslCtx;
@@ -58,9 +60,9 @@ public class PacketServerClient {
             b.group(group)
                     .channel(NioSocketChannel.class)
                     .option(ChannelOption.TCP_NODELAY, true)
-                    .handler(new PacketClientInitializer(sslCtx, ip, ((portskew > 0) ? portskew : PORT), handler)); //Cannot use the same port because they are on the same machine
+                    .handler(new PacketClientInitializer(sslCtx, ip, PORT + portSkew, handler)); //Cannot use the same port because they are on the same machine
 
-            ChannelFuture f = b.connect(ip, ((portskew > 0) ? portskew : PORT)).sync().channel().closeFuture().sync(); //Cannot use the same port because they are on the same machine
+            ChannelFuture f = b.connect(ip, PORT + portSkew).sync().channel().closeFuture().sync(); //Cannot use the same port because they are on the same machine
         } finally {
             group.shutdownGracefully();
         }

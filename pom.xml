@@ -23,9 +23,10 @@
             <version>2.8.4</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>in.spiph</groupId>
             <artifactId>Info</artifactId>
-            <version>${project.version}</version>
+            <version>1.0-SNAPSHOT</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>
